@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnotherBrother Türkçe Yama</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px 20px 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #snow-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .header-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-align: center;
+            margin-top: 20px;
+            z-index: 2;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 320px;
+            align-items: center;
+            z-index: 2;
+            margin: auto 0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 22px 10px;
+            border-radius: 18px;
+            text-decoration: none;
+            font-weight: 900;
+            font-size: 1.3rem;
+            text-align: center;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s, opacity 0.2s;
+            display: block;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-trailer {
+            background-color: #92e300;
+            color: #000000;
+        }
+
+        .btn-download {
+            background-color: #fbc000;
+            color: #000000;
+        }
+
+        .footer-text {
+            color: #92e300;
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 10px;
+            z-index: 2;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        @media (min-width: 768px) {
+            .header-title {
+                font-size: 2.8rem;
+            }
+
+            .button-container {
+                max-width: 380px;
+                gap: 30px;
+            }
+
+            .btn {
+                font-size: 1.5rem;
+                padding: 25px 10px;
+            }
+
+            .footer-text {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="snow-canvas"></canvas>
+
+    <h1 class="header-title">AnotherBrother Türkçe Yama</h1>
+
+    <div class="button-container">
+        <a href="https://youtu.be/D9lhyDsqJPE?si=VMq_tgq0n5uEYPWO" target="_blank" class="btn btn-trailer">fragman'ı izle</a>
+        <a href="https://drive.google.com/file/d/1J7q8LPcp6Cb9-yJk0ozjDiJtG3j9XBlt/view?usp=drivesdk" target="_blank" class="btn btn-download">oyunu indir</a>
+    </div>
+
+    <div class="footer-text">
+        Yama'nın yapımcısı Oyun Odası TR
+    </div>
+
+    <script>
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        const numFlakes = 90;
+        const flakes = [];
+
+        for (let i = 0; i < numFlakes; i++) {
+            flakes.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                r: Math.random() * 3 + 1,
+                d: Math.random() * numFlakes
+            });
+        }
+
+        function drawSnow() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+            ctx.beginPath();
+            
+            for (let i = 0; i < numFlakes; i++) {
+                const f = flakes[i];
+                ctx.moveTo(f.x, f.y);
+                ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+            }
+            ctx.fill();
+            updateSnow();
+        }
+
+        let angle = 0;
+        function updateSnow() {
+            angle += 0.01;
+            for (let i = 0; i < numFlakes; i++) {
+                const f = flakes[i];
+                f.y += Math.cos(angle + f.d) + 1 + f.r / 2;
+                f.x += Math.sin(angle) * 1;
+
+                if (f.x > width + 5 || f.x < -5 || f.y > height) {
+                    flakes[i] = { x: Math.random() * width, y: -10, r: f.r, d: f.d };
+                }
+            }
+        }
+
+        function animate() {
+            drawSnow();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+
+</body>
+</html>
