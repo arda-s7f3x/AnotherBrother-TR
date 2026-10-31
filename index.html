@@ -25,7 +25,7 @@
       overflow: hidden;
     }
 
-    /* Hafif Soğuk Atmosfer Katmanı (Ekran Kenarlarında Buz Efekti) */
+    /* Hafif Soğuk Atmosfer Katmanı */
     body::before {
       content: "";
       position: absolute;
@@ -47,6 +47,28 @@
       height: 100%;
       pointer-events: none;
       z-index: 0;
+    }
+
+    /* Ses Kontrol Butonu (Sağ Üst Köşe) */
+    .audio-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
+      transition: all 0.2s ease;
+    }
+
+    .audio-btn:active {
+      transform: scale(0.95);
     }
 
     /* İçerik Kutusu */
@@ -105,35 +127,19 @@
       font-size: 1rem;
       text-shadow: 0 0 8px rgba(163, 230, 53, 0.3);
     }
-
-    /* Ses Bildirim Alanı (Opsiyonel Bilgilendirme) */
-    .sound-hint {
-      position: absolute;
-      bottom: 10px;
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.4);
-      z-index: 2;
-      pointer-events: none;
-    }
   </style>
 </head>
 <body>
 
-  <canvas id="snow"></canvas>
+  <button id="soundToggle" class="audio-btn">🔇 Ses Aç</button>
 
-  <!-- Arka Plan Kış Rüzgarı / Kar Sesi (Ücretsiz ve Açık Kaynaklı Ses Linki) -->
-  <audio id="windSound" loop preload="auto">
-    <source src="https://actions.google.com/sounds/v1/weather/wind_heavy.ogg" type="audio/ogg">
-  </audio>
+  <canvas id="snow"></canvas>
 
   <div class="container">
     <h1>AnotherBrother<br>Türkçe Yama</h1>
 
     <div class="btn-group">
-      <!-- Fragman linkini buraya yapıştırabilirsin -->
       <a href="https://youtube.com" class="btn btn-trailer" target="_blank">fragman'ı izle</a>
-      
-      <!-- Google Drive / İndirme linkini buraya yapıştırabilirsin -->
       <a href="https://drive.google.com" class="btn btn-download" target="_blank">oyunu indir</a>
     </div>
 
@@ -141,8 +147,6 @@
       Yama'nın yapımcısı Oyun Odası TR
     </div>
   </div>
-
-  <div class="sound-hint">Atmosferik kış sesi için ekrana dokunabilirsiniz.</div>
 
   <script>
     // Kar Yağışı Scripti (Dümdüz aşağı)
@@ -193,15 +197,76 @@
 
     drawSnow();
 
-    // Ses Etkileşimi (Tarayıcı engeline takılmamak için ilk dokunuşta sesi başlatır)
-    const windSound = document.getElementById('windSound');
-    windSound.volume = 0.3; // Sesi çok patlamasın diye hafif kıstık (huzurlu bir seviye)
+    // Dahili Rüzgar Sesi Oluşturucu (Web Audio API - Dış Bağlantı Gerektirmez)
+    let audioCtx = null;
+    let isPlaying = false;
+    let gainNode = null;
 
-    window.addEventListener('click', () => {
-      if (windSound.paused) {
-        windSound.play().catch(e => console.log("Ses oynatılamadı:", e));
+    function createWindSound() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const bufferSize = audioCtx.sampleRate * 2;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+
+      // Pembe Gürültü (Rüzgar Uğultusu Simülasyonu)
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < bufferSize; i++) {
+        let white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168980;
+        output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+        output[i] *= 0.04; // Genlik ayarı
+        b6 = white * 0.115926;
       }
-    }, { once: true });
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+      whiteNoise.loop = true;
+
+      // Düşük Frekans Filtresi (Soğuk Rüzgar Uğultusu)
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 350;
+
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0.2; // Ses seviyesi
+
+      whiteNoise.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      whiteNoise.start();
+    }
+
+    const soundBtn = document.getElementById('soundToggle');
+
+    soundBtn.addEventListener('click', () => {
+      if (!audioCtx) {
+        createWindSound();
+        isPlaying = true;
+        soundBtn.textContent = "🔊 Ses Açık";
+        soundBtn.style.background = "rgba(163, 230, 53, 0.3)";
+      } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+        isPlaying = true;
+        soundBtn.textContent = "🔊 Ses Açık";
+        soundBtn.style.background = "rgba(163, 230, 53, 0.3)";
+      } else if (isPlaying) {
+        audioCtx.suspend();
+        isPlaying = false;
+        soundBtn.textContent = "🔇 Ses Kapalı";
+        soundBtn.style.background = "rgba(255, 255, 255, 0.1)";
+      } else {
+        audioCtx.resume();
+        isPlaying = true;
+        soundBtn.textContent = "🔊 Ses Açık";
+        soundBtn.style.background = "rgba(163, 230, 53, 0.3)";
+      }
+    });
   </script>
 </body>
 </html>
