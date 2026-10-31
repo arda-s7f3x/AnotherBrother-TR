@@ -105,21 +105,36 @@
       font-size: 1rem;
       text-shadow: 0 0 8px rgba(163, 230, 53, 0.3);
     }
+
+    /* Ses Bildirim Alanı (Opsiyonel Bilgilendirme) */
+    .sound-hint {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.4);
+      z-index: 2;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
 
   <canvas id="snow"></canvas>
 
+  <!-- Arka Plan Kış Rüzgarı / Kar Sesi (Ücretsiz ve Açık Kaynaklı Ses Linki) -->
+  <audio id="windSound" loop preload="auto">
+    <source src="https://actions.google.com/sounds/v1/weather/wind_heavy.ogg" type="audio/ogg">
+  </audio>
+
   <div class="container">
     <h1>AnotherBrother<br>Türkçe Yama</h1>
 
     <div class="btn-group">
       <!-- Fragman linkini buraya yapıştırabilirsin -->
-      <a href="https://youtu.be/D9lhyDsqJPE?si=VMq_tgq0n5uEYPWO" class="btn btn-trailer" target="_blank">fragman'ı izle</a>
+      <a href="https://youtube.com" class="btn btn-trailer" target="_blank">fragman'ı izle</a>
       
       <!-- Google Drive / İndirme linkini buraya yapıştırabilirsin -->
-      <a href="https://drive.google.com/file/d/1J7q8LPcp6Cb9-yJk0ozjDiJtG3j9XBlt/view?usp=drivesdk" class="btn btn-download" target="_blank">oyunu indir</a>
+      <a href="https://drive.google.com" class="btn btn-download" target="_blank">oyunu indir</a>
     </div>
 
     <div class="footer-text">
@@ -127,7 +142,10 @@
     </div>
   </div>
 
+  <div class="sound-hint">Atmosferik kış sesi için ekrana dokunabilirsiniz.</div>
+
   <script>
+    // Kar Yağışı Scripti (Dümdüz aşağı)
     const canvas = document.getElementById('snow');
     const ctx = canvas.getContext('2d');
 
@@ -139,7 +157,6 @@
       height = canvas.height = window.innerHeight;
     });
 
-    // Kar Taneleri Yapısı (Dümdüz aşağı düşen)
     const numFlakes = 80;
     const flakes = [];
 
@@ -147,8 +164,8 @@
       flakes.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        r: Math.random() * 3 + 1, // Boyut
-        speedY: Math.random() * 1.5 + 0.5 // Sadece aşağı düşme hızı
+        r: Math.random() * 3 + 1,
+        speedY: Math.random() * 1.5 + 0.5
       });
     }
 
@@ -162,10 +179,8 @@
         ctx.moveTo(f.x, f.y);
         ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
 
-        // Kar taneleri sadece dikey olarak (aşağı) hareket eder
         f.y += f.speedY;
 
-        // Ekranın altından çıkan kar tanesi en üstten tekrar başlar
         if (f.y > height) {
           f.y = -10;
           f.x = Math.random() * width;
@@ -177,6 +192,16 @@
     }
 
     drawSnow();
+
+    // Ses Etkileşimi (Tarayıcı engeline takılmamak için ilk dokunuşta sesi başlatır)
+    const windSound = document.getElementById('windSound');
+    windSound.volume = 0.3; // Sesi çok patlamasın diye hafif kıstık (huzurlu bir seviye)
+
+    window.addEventListener('click', () => {
+      if (windSound.paused) {
+        windSound.play().catch(e => console.log("Ses oynatılamadı:", e));
+      }
+    }, { once: true });
   </script>
 </body>
 </html>
